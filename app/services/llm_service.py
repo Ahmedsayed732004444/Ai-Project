@@ -11,12 +11,15 @@ logger = logging.getLogger(__name__)
 _client = Groq(api_key=settings.groq_api_key)
 
 
-async def call_llm(prompt: str) -> str:
+async def call_llm(prompt: str, max_tokens: int = None) -> str:
     """Send prompt to Groq and return response."""
     if not settings.groq_api_key:
         raise RuntimeError("GROQ_API_KEY is not set in .env file.")
 
-    logger.info("Calling Groq AI model: %s", settings.groq_model)
+    # Use provided max_tokens or default from settings
+    token_limit = max_tokens if max_tokens is not None else settings.llm_max_tokens
+
+    logger.info("Calling Groq AI model: %s (max_tokens: %d)", settings.groq_model, token_limit)
 
     try:
         response = _client.chat.completions.create(
@@ -24,11 +27,11 @@ async def call_llm(prompt: str) -> str:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert CV parser. Return ONLY valid JSON.",
+                    "content": "You are an expert .NET career advisor and technical mentor. Return ONLY valid JSON with no markdown formatting.",
                 },
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=settings.llm_max_tokens,
+            max_tokens=token_limit,
             temperature=0.0,
         )
     except Exception as exc:
